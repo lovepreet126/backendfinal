@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard — GigBoard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0f; --surface: #111118; --card: #16161f;
+      --border: #2a2a3a; --accent: #7c5cfc; --accent2: #fc5c7d;
+      --text: #e8e8f0; --muted: #6b6b80; --success: #22d3a0; --warning: #f59e0b;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; }
+    .sidebar { width: 240px; height: 100vh; background: var(--surface); border-right: 1px solid var(--border); position: fixed; left: 0; top: 0; display: flex; flex-direction: column; padding: 24px 16px; z-index: 100; }
+    .logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.4rem; padding: 0 8px 28px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+    .logo span { color: var(--accent); }
+    .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; color: var(--muted); text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: all 0.2s; cursor: pointer; margin-bottom: 2px; }
+    .nav-item:hover, .nav-item.active { background: rgba(124,92,252,0.12); color: var(--text); }
+    .nav-item.active { color: var(--accent); }
+    .nav-icon { font-size: 1.1rem; width: 20px; text-align: center; }
+    .sidebar-bottom { margin-top: auto; }
+    .user-chip { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 12px; background: var(--card); border: 1px solid var(--border); cursor: pointer; }
+    .user-avatar { width: 36px; height: 36px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.85rem; color: white; flex-shrink: 0; }
+    .user-info { overflow: hidden; }
+    .user-name { font-size: 0.85rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-credits { font-size: 0.75rem; color: var(--success); }
+    .main { margin-left: 240px; padding: 32px; min-height: 100vh; }
+    .page { display: none; }
+    .page.active { display: block; }
+    .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; }
+    .page-title { font-family: 'Syne', sans-serif; font-size: 1.8rem; font-weight: 800; }
+    .top-actions { display: flex; gap: 12px; align-items: center; }
+    .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; border: none; padding: 10px 20px; border-radius: 10px; font-family: 'Syne', sans-serif; font-size: 0.9rem; font-weight: 700; cursor: pointer; transition: opacity 0.2s; }
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-outline { background: none; border: 1px solid var(--border); color: var(--text); padding: 10px 16px; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; cursor: pointer; transition: border-color 0.2s; }
+    .btn-outline:hover { border-color: var(--accent); }
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+    .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+    .stat-card-label { color: var(--muted); font-size: 0.8rem; margin-bottom: 8px; }
+    .stat-card-value { font-family: 'Syne', sans-serif; font-size: 1.8rem; font-weight: 800; }
+    .stat-card-value.green { color: var(--success); }
+    .stat-card-value.purple { color: var(--accent); }
+    .stat-card-value.pink { color: var(--accent2); }
+    .filters { display: flex; gap: 10px; margin-bottom: 24px; flex-wrap: wrap; align-items: center; }
+    .filter-input { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 9px 14px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.9rem; outline: none; transition: border-color 0.2s; }
+    .filter-input:focus { border-color: var(--accent); }
+    .filter-input::placeholder { color: var(--muted); }
+    .filter-select { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 9px 14px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.9rem; outline: none; cursor: pointer; }
+    .filter-select option { background: var(--card); }
+    .gigs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px; }
+    .gig-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; transition: border-color 0.2s, transform 0.2s; cursor: pointer; }
+    .gig-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .gig-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+    .gig-badge { font-size: 0.72rem; font-weight: 600; padding: 3px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .badge-open      { background: rgba(34,211,160,0.15);  color: var(--success); }
+    .badge-bidding   { background: rgba(245,158,11,0.15);   color: var(--warning); }
+    .badge-assigned  { background: rgba(124,92,252,0.15);   color: var(--accent); }
+    .badge-completed { background: rgba(107,107,128,0.15);  color: var(--muted); }
+    .badge-closed    { background: rgba(107,107,128,0.15);  color: var(--muted); }
+    .badge-urgent    { background: rgba(252,92,125,0.15); color: var(--accent2); margin-left: 6px; }
+    .gig-title { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700; margin-bottom: 6px; line-height: 1.3; }
+    .gig-desc { color: var(--muted); font-size: 0.85rem; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 14px; }
+    .gig-meta { display: flex; gap: 12px; align-items: center; font-size: 0.8rem; color: var(--muted); margin-bottom: 14px; flex-wrap: wrap; }
+    .gig-meta span { display: flex; align-items: center; gap: 4px; }
+    .gig-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 14px; border-top: 1px solid var(--border); }
+    .gig-budget { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 800; color: var(--success); }
+    .gig-poster { font-size: 0.8rem; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+    .mini-avatar { width: 22px; height: 22px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 700; color: white; }
+    .tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+    .tag { font-size: 0.72rem; padding: 3px 8px; background: rgba(124,92,252,0.1); color: var(--accent); border-radius: 6px; }
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); grid-column: 1/-1; }
+    .empty-state .emoji { font-size: 3rem; margin-bottom: 12px; }
+    .empty-state h3 { font-family: 'Syne', sans-serif; font-size: 1.1rem; color: var(--text); margin-bottom: 6px; }
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; width: 90%; max-width: 560px; max-height: 90vh; overflow-y: auto; padding: 32px; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .modal-title { font-family: 'Syne', sans-serif; font-size: 1.3rem; font-weight: 800; }
+    .close-btn { background: var(--card); border: 1px solid var(--border); color: var(--muted); width: 32px; height: 32px; border-radius: 8px; cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .form-row { display: flex; gap: 12px; }
+    .form-row .form-group { flex: 1; }
+    label { font-size: 0.82rem; color: var(--muted); font-weight: 500; }
+    input, select, textarea { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.9rem; outline: none; transition: border-color 0.2s; }
+    input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+    input::placeholder, textarea::placeholder { color: var(--muted); }
+    textarea { resize: vertical; min-height: 90px; }
+    select option { background: var(--card); }
+    .checkbox-group { display: flex; align-items: center; gap: 10px; }
+    .checkbox-group input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--accent); }
+    .checkbox-group label { color: var(--text); font-size: 0.9rem; }
+    .detail-section { margin-bottom: 24px; }
+    .detail-label { font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; font-weight: 500; }
+    .detail-text { font-size: 0.95rem; line-height: 1.6; }
+    .detail-meta { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 20px; padding: 16px; background: var(--card); border-radius: 12px; }
+    .detail-meta-item { text-align: center; }
+    .detail-meta-val { font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 800; color: var(--success); }
+    .detail-meta-label { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+    .bids-list { display: flex; flex-direction: column; gap: 10px; }
+    .bid-item { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
+    .bid-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .bid-name { font-weight: 600; font-size: 0.9rem; }
+    .bid-amount { color: var(--success); font-family: 'Syne', sans-serif; font-weight: 700; }
+    .bid-msg { color: var(--muted); font-size: 0.85rem; }
+    .toast { position: fixed; bottom: 24px; right: 24px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; font-size: 0.9rem; z-index: 999; transform: translateY(80px); opacity: 0; transition: all 0.3s; max-width: 300px; }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.success { border-color: var(--success); color: var(--success); }
+    .toast.error { border-color: var(--accent2); color: var(--accent2); }
+    .notif-btn { position: relative; background: var(--card); border: 1px solid var(--border); color: var(--text); width: 38px; height: 38px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+    .notif-badge { position: absolute; top: -4px; right: -4px; background: var(--accent2); color: white; width: 16px; height: 16px; border-radius: 50%; font-size: 0.65rem; font-weight: 700; display: none; align-items: center; justify-content: center; }
+    .leaderboard-list { display: flex; flex-direction: column; gap: 10px; }
+    .lb-item { display: flex; align-items: center; gap: 14px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+    .lb-rank { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.1rem; width: 28px; text-align: center; color: var(--muted); }
+    .lb-rank.gold { color: #fbbf24; }
+    .lb-rank.silver { color: #9ca3af; }
+    .lb-rank.bronze { color: #d97706; }
+    .lb-info { flex: 1; }
+    .lb-name { font-weight: 600; font-size: 0.95rem; }
+    .lb-college { color: var(--muted); font-size: 0.8rem; }
+    .lb-skills { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+    .lb-gigs { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.1rem; color: var(--success); text-align: right; }
+    .lb-gigs-label { font-size: 0.7rem; color: var(--muted); }
+    .wallet-card { background: linear-gradient(135deg, rgba(124,92,252,0.2), rgba(252,92,125,0.1)); border: 1px solid rgba(124,92,252,0.3); border-radius: 18px; padding: 28px; margin-bottom: 28px; }
+    .wallet-balance-label { color: var(--muted); font-size: 0.9rem; margin-bottom: 6px; }
+    .wallet-balance { font-family: 'Syne', sans-serif; font-size: 3rem; font-weight: 800; color: var(--success); }
+    .wallet-balance span { font-size: 1rem; color: var(--muted); }
+    .tx-list { display: flex; flex-direction: column; gap: 8px; }
+    .tx-item { display: flex; align-items: center; justify-content: space-between; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; }
+    .tx-desc { font-size: 0.88rem; }
+    .tx-date { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+    .tx-amount { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; }
+    .tx-credit { color: var(--success); }
+    .tx-debit { color: var(--accent2); }
+    .sub-tabs { display: flex; gap: 4px; background: var(--card); border-radius: 10px; padding: 4px; margin-bottom: 24px; width: fit-content; }
+    .sub-tab { padding: 7px 16px; border-radius: 8px; border: none; background: none; color: var(--muted); font-family: 'DM Sans', sans-serif; font-size: 0.88rem; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+    .sub-tab.active { background: var(--accent); color: white; }
+    @media (max-width: 768px) { .sidebar { display: none; } .main { margin-left: 0; padding: 16px; } .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+  </style>
+</head>
+<body>
+
+  <aside class="sidebar">
+    <div class="logo">Gig<span>Board</span></div>
+    <nav>
+      <div class="nav-item active" onclick="showPage('browse')" id="nav-browse"><span class="nav-icon">🔍</span> Browse Gigs</div>
+      <div class="nav-item" onclick="showPage('my-gigs')" id="nav-my-gigs"><span class="nav-icon">📋</span> My Gigs</div>
+      <div class="nav-item" onclick="showPage('leaderboard')" id="nav-leaderboard"><span class="nav-icon">🏆</span> Leaderboard</div>
+      <div class="nav-item" onclick="showPage('wallet')" id="nav-wallet"><span class="nav-icon">💰</span> Wallet</div>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="user-chip">
+        <div class="user-avatar" id="sidebarAvatar">A</div>
+        <div class="user-info">
+          <div class="user-name" id="sidebarName">Aryan Sharma</div>
+          <div class="user-credits" id="sidebarCredits">100 credits</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <div class="page active" id="page-browse">
+      <div class="top-bar">
+        <div class="page-title">Browse Gigs</div>
+        <div class="top-actions">
+          <button class="notif-btn" title="Notifications">🔔 <span class="notif-badge" id="notifBadge">0</span></button>
+          <button class="btn-primary" onclick="openPostModal()">+ Post a Gig</button>
+        </div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-card-label">Open Gigs</div><div class="stat-card-value purple" id="statOpen">—</div></div>
+        <div class="stat-card"><div class="stat-card-label">My Credits</div><div class="stat-card-value green" id="statCredits">100</div></div>
+        <div class="stat-card"><div class="stat-card-label">Gigs Completed</div><div class="stat-card-value" id="statCompleted">3</div></div>
+        <div class="stat-card"><div class="stat-card-label">My Reputation</div><div class="stat-card-value pink" id="statRep">⭐ 4.5</div></div>
+      </div>
+      <div class="filters">
+        <input class="filter-input" id="searchInput" placeholder="🔍  Search gigs..." style="width:220px" oninput="debounceLoad()"/>
+        <select class="filter-select" id="categoryFilter" onchange="filterGigs()">
+          <option value="">All Categories</option>
+          <option value="delivery">🚚 Delivery</option>
+          <option value="design">🎨 Design</option>
+          <option value="coding">💻 Coding</option>
+          <option value="tutoring">📚 Tutoring</option>
+          <option value="writing">✍️ Writing</option>
+          <option value="photography">📸 Photography</option>
+          <option value="moving">📦 Moving</option>
+          <option value="printing">🖨️ Printing</option>
+          <option value="other">✨ Other</option>
+        </select>
+        <select class="filter-select" id="urgentFilter" onchange="filterGigs()">
+          <option value="">All Gigs</option>
+          <option value="true">⚡ Urgent Only</option>
+        </select>
+        <button class="btn-outline" onclick="loadGigs()">Refresh</button>
+      </div>
+      <div class="gigs-grid" id="gigsGrid"><div class="empty-state"><div class="emoji">⏳</div><h3>Loading gigs...</h3></div></div>
+      <div style="display:flex;justify-content:center;gap:12px;margin-top:24px" id="pagination"></div>
+    </div>
+
+    <div class="page" id="page-my-gigs">
+      <div class="top-bar"><div class="page-title">My Gigs</div><button class="btn-primary" onclick="openPostModal()">+ Post a Gig</button></div>
+      <div class="sub-tabs">
+        <button class="sub-tab active" onclick="switchMyGigsTab('posted', this)">Posted by Me</button>
+        <button class="sub-tab" onclick="switchMyGigsTab('assigned', this)">Assigned to Me</button>
+      </div>
+      <div class="gigs-grid" id="myGigsGrid"><div class="empty-state"><div class="emoji">⏳</div><h3>Loading...</h3></div></div>
+    </div>
+
+    <div class="page" id="page-leaderboard">
+      <div class="top-bar"><div class="page-title">🏆 Leaderboard</div></div>
+      <div class="leaderboard-list" id="leaderboardList"><div style="color:var(--muted);text-align:center;padding:40px">Loading...</div></div>
+    </div>
+
+    <div class="page" id="page-wallet">
+      <div class="top-bar"><div class="page-title">💰 Wallet</div></div>
+      <div class="wallet-card">
+        <div class="wallet-balance-label">Available Credits</div>
+        <div class="wallet-balance">100 <span>credits</span></div>
+      </div>
+      <h3 style="font-family:'Syne',sans-serif;margin-bottom:14px">Transaction History</h3>
+      <div class="tx-list" id="txList"><div style="color:var(--muted);text-align:center;padding:30px">Loading...</div></div>
+    </div>
+
+  </main>
+
+  <!-- POST GIG MODAL -->
+  <div class="modal-overlay" id="postModal">
+    <div class="modal">
+      <div class="modal-header"><div class="modal-title">Post a New Gig</div><button class="close-btn" onclick="closeModal('postModal')">✕</button></div>
+      <div class="form-group"><label>Gig Title *</label><input type="text" id="gigTitle" placeholder="e.g. Print and deliver my notes to Hostel B" maxlength="100"/></div>
+      <div class="form-group"><label>Description *</label><textarea id="gigDesc" placeholder="Explain what needs to be done, any requirements..."></textarea></div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Category *</label>
+          <select id="gigCategory">
+            <option value="">Select...</option>
+            <option value="delivery">🚚 Delivery</option>
+            <option value="design">🎨 Design</option>
+            <option value="coding">💻 Coding</option>
+            <option value="tutoring">📚 Tutoring</option>
+            <option value="writing">✍️ Writing</option>
+            <option value="photography">📸 Photography</option>
+            <option value="moving">📦 Moving</option>
+            <option value="printing">🖨️ Printing</option>
+            <option value="other">✨ Other</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Budget (credits) *</label><input type="number" id="gigBudget" placeholder="e.g. 20" min="1"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Deadline *</label><input type="datetime-local" id="gigDeadline"/></div>
+        <div class="form-group"><label>Location</label><input type="text" id="gigLocation" placeholder="e.g. Library, Hostel A"/></div>
+      </div>
+      <div class="form-group"><label>Tags (comma separated)</label><input type="text" id="gigTags" placeholder="e.g. urgent, design, photoshop"/></div>
+      <div class="form-group"><div class="checkbox-group"><input type="checkbox" id="gigUrgent"/><label for="gigUrgent">⚡ Mark as Urgent</label></div></div>
+      <button class="btn-primary" style="width:100%;margin-top:8px" onclick="submitGig()">Post Gig</button>
+    </div>
+  </div>
+
+  <!-- GIG DETAIL MODAL -->
+  <div class="modal-overlay" id="detailModal">
+    <div class="modal" style="max-width:640px">
+      <div class="modal-header"><div class="modal-title" id="detailTitle">Gig Details</div><button class="close-btn" onclick="closeModal('detailModal')">✕</button></div>
+      <div id="detailContent"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const API   = 'http://localhost:3000/api';
+    const TOKEN = 'gigboard-token-123';
+    let allGigs = [];
+    let debounceTimer;
+
+    async function apiFetch(endpoint) {
+      try { const r = await fetch(API + endpoint); return await r.json(); }
+      catch(e) { return {}; }
+    }
+    async function authFetch(endpoint, method = 'GET', body = null) {
+      try {
+        const opts = { method, headers: { 'Content-Type': 'application/json', 'Authorization': TOKEN } };
+        if (body) opts.body = JSON.stringify(body);
+        const r = await fetch(API + endpoint, opts);
+        return await r.json();
+      } catch(e) { return { success: false }; }
+    }
+    function showToast(msg, type = 'success') {
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.className = `toast ${type} show`;
+      setTimeout(() => t.classList.remove('show'), 3500);
+    }
+    function openPostModal() { document.getElementById('postModal').classList.add('open'); }
+    function closeModal(id)  { document.getElementById(id).classList.remove('open'); }
+    document.querySelectorAll('.modal-overlay').forEach(m => {
+      m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+    });
+
+    function showPage(id) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.getElementById(`page-${id}`)?.classList.add('active');
+      document.getElementById(`nav-${id}`)?.classList.add('active');
+      if (id === 'browse')      loadGigs();
+      if (id === 'my-gigs')     loadMyGigs('posted');
+      if (id === 'leaderboard') loadLeaderboard();
+      if (id === 'wallet')      loadWallet();
+    }
+
+    function gigCardHTML(g) {
+      const id       = g.id || g._id;
+      const status   = g.status || 'open';
+      const badges   = `<span class="gig-badge badge-${status}">${status}</span>${g.isUrgent ? '<span class="gig-badge badge-urgent">⚡ Urgent</span>' : ''}`;
+      const tags     = g.tags?.length ? `<div class="tags">${g.tags.slice(0,3).map(t=>`<span class="tag">${t}</span>`).join('')}</div>` : '';
+      const deadline = g.deadline ? new Date(g.deadline).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+      const cat      = g.category ? `<span>📂 ${g.category}</span>` : '';
+      const loc      = g.location ? `<span>📍 ${g.location}</span>` : '';
+      const poster   = g.postedBy?.name || g.postedBy || 'Student';
+      return `
+        <div class="gig-card" onclick="openGigDetail('${id}')">
+          <div class="gig-card-top"><div style="display:flex;gap:6px">${badges}</div></div>
+          <div class="gig-title">${g.title}</div>
+          <div class="gig-desc">${g.description || ''}</div>
+          ${tags}
+          <div class="gig-meta">${cat}${loc}${deadline ? `<span>⏰ ${deadline}</span>` : ''}<span>💬 ${g.bids?.length || 0} bids</span></div>
+          <div class="gig-footer">
+            <div class="gig-budget">${g.budget} credits</div>
+            <div class="gig-poster"><div class="mini-avatar">${poster[0].toUpperCase()}</div>${poster}</div>
+          </div>
+        </div>`;
+    }
+
+    async function loadGigs() {
+      document.getElementById('gigsGrid').innerHTML = '<div class="empty-state"><div class="emoji">⏳</div><h3>Loading gigs...</h3></div>';
+      const data = await apiFetch('/gigs');
+      allGigs = data.gigs || [];
+      document.getElementById('statOpen').textContent = allGigs.filter(g => g.status === 'open').length;
+      renderGigs(allGigs);
+    }
+    function renderGigs(gigs) {
+      const grid = document.getElementById('gigsGrid');
+      if (!gigs.length) { grid.innerHTML = '<div class="empty-state"><div class="emoji">🔎</div><h3>No gigs found</h3><p>Try different filters or post one yourself!</p></div>'; return; }
+      grid.innerHTML = gigs.map(gigCardHTML).join('');
+    }
+    function debounceLoad() { clearTimeout(debounceTimer); debounceTimer = setTimeout(filterGigs, 400); }
+    function filterGigs() {
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      const cat    = document.getElementById('categoryFilter').value;
+      const urgent = document.getElementById('urgentFilter').value;
+      let f = allGigs;
+      if (search) f = f.filter(g => g.title.toLowerCase().includes(search) || (g.description||'').toLowerCase().includes(search));
+      if (cat)    f = f.filter(g => g.category === cat);
+      if (urgent) f = f.filter(g => g.isUrgent === true);
+      renderGigs(f);
+    }
+
+    async function openGigDetail(id) {
+      document.getElementById('detailTitle').textContent = 'Loading...';
+      document.getElementById('detailContent').innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted)">⏳ Fetching...</div>';
+      document.getElementById('detailModal').classList.add('open');
+      const data = await apiFetch(`/gigs/${id}`);
+      const g = data.gig;
+      if (!g) { document.getElementById('detailContent').innerHTML = '<p style="color:var(--accent2)">Gig not found.</p>'; return; }
+      document.getElementById('detailTitle').textContent = g.title;
+      const poster   = g.postedBy?.name || g.postedBy || 'Student';
+      const deadline = g.deadline ? new Date(g.deadline).toLocaleString('en-IN') : 'No deadline';
+      const bidsHTML = g.bids?.length
+        ? g.bids.map(b => `<div class="bid-item"><div class="bid-top"><span class="bid-name">${b.bidder?.name || b.bidder || 'Student'}</span><span class="bid-amount">${b.amount} credits</span></div><div class="bid-msg">${b.message || ''}</div></div>`).join('')
+        : '<div style="color:var(--muted);font-size:0.9rem">No bids yet. Be the first!</div>';
+      document.getElementById('detailContent').innerHTML = `
+        <div class="detail-meta">
+          <div class="detail-meta-item"><div class="detail-meta-val">${g.budget}</div><div class="detail-meta-label">Budget (credits)</div></div>
+          <div class="detail-meta-item"><div class="detail-meta-val" style="color:var(--warning)">${g.bids?.length || 0}</div><div class="detail-meta-label">Total Bids</div></div>
+          <div class="detail-meta-item"><div class="detail-meta-val" style="color:var(--muted);font-size:0.9rem">${(g.status||'open').toUpperCase()}</div><div class="detail-meta-label">Status</div></div>
+          <div class="detail-meta-item"><div class="detail-meta-val" style="color:var(--muted);font-size:0.75rem">${deadline}</div><div class="detail-meta-label">Deadline</div></div>
+        </div>
+        <div class="detail-section"><div class="detail-label">Description</div><div class="detail-text">${g.description || 'No description.'}</div></div>
+        <div class="detail-section">
+          <div class="detail-label">Posted by</div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="mini-avatar" style="width:32px;height:32px;font-size:0.8rem">${poster[0].toUpperCase()}</div>
+            <div><strong>${poster}</strong></div>
+          </div>
+        </div>
+        <div class="detail-section"><div class="detail-label">Bids (${g.bids?.length || 0})</div><div class="bids-list">${bidsHTML}</div></div>
+        <button class="btn-outline" style="width:100%;margin-top:8px;border-color:var(--accent2);color:var(--accent2)" onclick="deleteGig(${g.id||g._id})">🗑 Delete Gig</button>`;
+    }
+
+    async function submitGig() {
+      const title    = document.getElementById('gigTitle').value.trim();
+      const desc     = document.getElementById('gigDesc').value.trim();
+      const category = document.getElementById('gigCategory').value;
+      const budget   = document.getElementById('gigBudget').value;
+      if (!title || !category || !budget) { showToast('Please fill all required fields', 'error'); return; }
+      const data = await authFetch('/gigs', 'POST', {
+        title, description: desc, category, budget: parseInt(budget), postedBy: 'u1',
+        deadline: document.getElementById('gigDeadline').value,
+        location: document.getElementById('gigLocation').value,
+        tags: document.getElementById('gigTags').value,
+        isUrgent: document.getElementById('gigUrgent').checked
+      });
+      if (data.success) {
+        showToast('Gig posted! 🚀', 'success');
+        closeModal('postModal');
+        ['gigTitle','gigDesc','gigBudget','gigDeadline','gigLocation','gigTags'].forEach(id => document.getElementById(id).value = '');
+        document.getElementById('gigUrgent').checked = false;
+        loadGigs();
+      } else { showToast(data.error || 'Failed to post gig', 'error'); }
+    }
+
+    async function deleteGig(id) {
+      const data = await authFetch(`/gigs/${id}`, 'DELETE');
+      if (data.success) { showToast('Gig deleted!'); closeModal('detailModal'); loadGigs(); }
+      else { showToast(data.error || 'Could not delete', 'error'); }
+    }
+
+    async function loadMyGigs(tab) {
+      const grid = document.getElementById('myGigsGrid');
+      grid.innerHTML = '<div class="empty-state"><div class="emoji">⏳</div><h3>Loading...</h3></div>';
+      const endpoint = tab === 'posted' ? '/users/u1/gigs' : '/users/u2/gigs';
+      const data = await apiFetch(endpoint);
+      if (!data.gigs?.length) { grid.innerHTML = '<div class="empty-state"><div class="emoji">📭</div><h3>No gigs here yet</h3></div>'; return; }
+      grid.innerHTML = data.gigs.map(gigCardHTML).join('');
+    }
+    function switchMyGigsTab(tab, el) {
+      document.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+      loadMyGigs(tab);
+    }
+
+    async function loadLeaderboard() {
+      const data  = await apiFetch('/users');
+      const users = data.users || [];
+      const ranks = ['gold', 'silver', 'bronze'];
+      document.getElementById('leaderboardList').innerHTML = users.map((u, i) => `
+        <div class="lb-item">
+          <div class="lb-rank ${ranks[i]||''}">#${i+1}</div>
+          <div class="mini-avatar" style="width:38px;height:38px;font-size:0.9rem">${u.name[0]}</div>
+          <div class="lb-info">
+            <div class="lb-name">${u.name}</div>
+            <div class="lb-college">${u.college}</div>
+            <div class="lb-skills">${(u.skills||[]).map(s=>`<span class="tag">${s}</span>`).join('')}</div>
+          </div>
+          <div style="text-align:right">
+            <div class="lb-gigs">${u.postedGigs?.length || 0}</div>
+            <div class="lb-gigs-label">gigs posted</div>
+          </div>
+        </div>`).join('');
+    }
+
+    function loadWallet() {
+      document.getElementById('txList').innerHTML = [
+        { type: 'credit', description: 'Payment for completing gig: Design a poster', amount: 500, date: '8 Mar 2026' },
+        { type: 'debit',  description: 'Posted gig: Build a registration form',       amount: 1200, date: '7 Mar 2026' },
+        { type: 'credit', description: 'Bonus for 5-star rating',                     amount: 50,   date: '6 Mar 2026' },
+      ].map(tx => `
+        <div class="tx-item">
+          <div><div class="tx-desc">${tx.description}</div><div class="tx-date">${tx.date}</div></div>
+          <div class="tx-amount ${tx.type === 'credit' ? 'tx-credit' : 'tx-debit'}">${tx.type === 'credit' ? '+' : '-'}${tx.amount}</div>
+        </div>`).join('');
+    }
+
+    loadGigs();
+  </script>
+</body>
+</html>

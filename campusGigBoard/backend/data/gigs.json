@@ -1,0 +1,47 @@
+[
+  {
+    "id": 1,
+    "title": "Design a poster for college fest",
+    "description": "Need a creative poster for our annual cultural fest.",
+    "category": "design",
+    "budget": 500,
+    "postedBy": "u1",
+    "status": "open"
+  },
+  {
+    "id": 2,
+    "title": "Build a registration form in React",
+    "description": "Simple registration form with validation for a hackathon.",
+    "category": "coding",
+    "budget": 1200,
+    "postedBy": "u2",
+    "status": "open"
+  },
+  {
+    "id": 3,
+    "title": "Tutor 1st year students in Maths",
+    "description": "Need someone to take 3 sessions of calculus tutoring.",
+    "category": "tutoring",
+    "budget": 300,
+    "postedBy": "u1",
+    "status": "closed"
+  },
+  {
+    "id": 4,
+    "title": "Edit a 5 minute video for YouTube",
+    "description": "Basic cuts, transitions and subtitles needed.",
+    "category": "video",
+    "budget": 700,
+    "postedBy": "u3",
+    "status": "open"
+  },
+  {
+    "id": 5,
+    "title": "Write content for college newsletter",
+    "description": "2 articles, 500 words each about tech trends.",
+    "category": "writing",
+    "budget": 400,
+    "postedBy": "u2",
+    "status": "open"
+  }
+]
