@@ -1,38 +1,36 @@
-const fs   = require('fs');   // built-in file system module
+const fs   = require('fs');   
 const path = require('path');
 
-// Helper: read gigs from JSON file using fs module
+
 const readGigs = () => {
   const filePath = path.join(__dirname, '../data/gigs.json');
   const data     = fs.readFileSync(filePath, 'utf-8'); // fs module usage
   return JSON.parse(data);
 };
 
-// Helper: write updated gigs back to JSON file
+
 const writeGigs = (gigs) => {
   const filePath = path.join(__dirname, '../data/gigs.json');
   fs.writeFileSync(filePath, JSON.stringify(gigs, null, 2));
 };
 
-// ─── GET /api/gigs ─────────────────────────────────────────────────────────────
-// Get all gigs (optional filter by category using query param)
+
 const getGigs = (req, res, next) => {
   try {
     let gigs = readGigs();
 
-    // Route query: /api/gigs?category=coding
+    
     const { category, status } = req.query;
     if (category) gigs = gigs.filter(g => g.category === category);
     if (status)   gigs = gigs.filter(g => g.status   === status);
 
     res.status(200).json({ success: true, count: gigs.length, gigs });
   } catch (err) {
-    next(err); // passes to errorHandler middleware
+    next(err); 
   }
 };
 
-// ─── GET /api/gigs/:id ─────────────────────────────────────────────────────────
-// Get a single gig by ID — shows route parameters
+
 const getGigById = (req, res, next) => {
   try {
     const gigs = readGigs();
@@ -41,7 +39,7 @@ const getGigById = (req, res, next) => {
     if (!gig) {
       const err = new Error('Gig not found');
       err.status = 404;
-      throw err; // goes to catch → next(err) → errorHandler
+      throw err;
     }
 
     res.status(200).json({ success: true, gig });
@@ -50,8 +48,7 @@ const getGigById = (req, res, next) => {
   }
 };
 
-// ─── GET /api/gigs/category/:type ─────────────────────────────────────────────
-// Get gigs by category — shows route paths
+
 const getGigsByCategory = (req, res, next) => {
   try {
     const gigs     = readGigs();
@@ -63,8 +60,7 @@ const getGigsByCategory = (req, res, next) => {
   }
 };
 
-// ─── POST /api/gigs ────────────────────────────────────────────────────────────
-// Create a new gig — protected route (needs authCheck middleware)
+
 const createGig = (req, res, next) => {
   try {
     const { title, description, category, budget, postedBy } = req.body;
@@ -98,8 +94,7 @@ const createGig = (req, res, next) => {
   }
 };
 
-// ─── PUT /api/gigs/:id ─────────────────────────────────────────────────────────
-// Update a gig — protected route
+
 const updateGig = (req, res, next) => {
   try {
     const gigs  = readGigs();
@@ -120,8 +115,7 @@ const updateGig = (req, res, next) => {
   }
 };
 
-// ─── DELETE /api/gigs/:id ──────────────────────────────────────────────────────
-// Delete a gig — protected route
+
 const deleteGig = (req, res, next) => {
   try {
     let gigs  = readGigs();

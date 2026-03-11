@@ -1,14 +1,12 @@
 const fs   = require('fs');
 const path = require('path');
 
-// Helper: read users from JSON file
 const readUsers = () => {
   const filePath = path.join(__dirname, '../data/users.json');
   const data     = fs.readFileSync(filePath, 'utf-8');
   return JSON.parse(data);
 };
 
-// ─── GET /api/users ────────────────────────────────────────────────────────────
 const getUsers = (req, res, next) => {
   try {
     const users = readUsers();
@@ -18,7 +16,6 @@ const getUsers = (req, res, next) => {
   }
 };
 
-// ─── GET /api/users/:userId ────────────────────────────────────────────────────
 const getUserById = (req, res, next) => {
   try {
     const users = readUsers();
@@ -36,8 +33,7 @@ const getUserById = (req, res, next) => {
   }
 };
 
-// ─── GET /api/users/:userId/gigs ───────────────────────────────────────────────
-// Get all gigs posted by a specific user — shows nested route path
+
 const getUserGigs = (req, res, next) => {
   try {
     const users = readUsers();
